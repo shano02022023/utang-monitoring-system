@@ -17,6 +17,7 @@ class SqlHelper {
           amount INTEGER,
           status TEXT,
           remarks TEXT,
+          proof_completed_photo TEXT,
           created_at TEXT,
           updated_at TEXT
         )''');
@@ -28,6 +29,7 @@ class SqlHelper {
           amount INTEGER,
           status TEXT,
           remarks TEXT,
+          proof_completed_photo TEXT,
           created_at TEXT,
           updated_at TEXT
         )''');

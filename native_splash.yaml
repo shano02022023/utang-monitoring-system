@@ -1,0 +1,10 @@
+flutter_native_splash:
+  android: true
+  ios: true
+
+  color: "#FFFFFF"
+  image: "assets/images/dark_zuckerburg.png"
+
+  android_12:
+    color: "#FFFFFF"
+    image: "assets/images/dark_zuckerburg.png"
