@@ -26,6 +26,7 @@ class _DebtsPageState extends State<DebtsPage> {
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
   String? selectedFilterStatus;
+  final DateFormat formatter = DateFormat('MMM. dd, yyyy \'at\' h:mm a');
 
   Future<void> getDebts(filterStatus) async {
     setState(() {
@@ -72,7 +73,10 @@ class _DebtsPageState extends State<DebtsPage> {
     }
   }
 
-  void _viewDebtDetails(BuildContext viewDetailsContext, Map<String, dynamic> debt) {
+  void _viewDebtDetails(
+    BuildContext viewDetailsContext,
+    Map<String, dynamic> debt,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -96,8 +100,14 @@ class _DebtsPageState extends State<DebtsPage> {
                   _buildInfoRow('Amount', '₱${debt['amount']}'),
                   _buildInfoRow('Status', debt['status']),
                   _buildInfoRow('Remarks', debt['remarks']),
-                  _buildInfoRow('Created At', debt['created_at']),
-                  _buildInfoRow('Updated At', debt['updated_at']),
+                  _buildInfoRow(
+                    'Created At',
+                    formatter.format(DateTime.parse(debt['created_at'])),
+                  ),
+                  _buildInfoRow(
+                    'Updated At',
+                    formatter.format(DateTime.parse(debt['updated_at'])),
+                  ),
                   if (photoPath != null && photoPath.toString().isNotEmpty) ...[
                     const SizedBox(height: 16),
                     const Text(
@@ -121,6 +131,10 @@ class _DebtsPageState extends State<DebtsPage> {
           ),
           actions: <Widget>[
             TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close', style: TextStyle(color: Colors.blue)),
+            ),
+            TextButton(
               onPressed: () {
                 QuickAlert.show(
                   context: context,
@@ -143,7 +157,9 @@ class _DebtsPageState extends State<DebtsPage> {
                       Navigator.of(viewDetailsContext).pop();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to delete receivable')),
+                        const SnackBar(
+                          content: Text('Failed to delete receivable'),
+                        ),
                       );
                     }
                     getDebts('');
@@ -151,10 +167,6 @@ class _DebtsPageState extends State<DebtsPage> {
                 );
               },
               child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close', style: TextStyle(color: Colors.blue)),
             ),
           ],
         );
@@ -185,7 +197,7 @@ class _DebtsPageState extends State<DebtsPage> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Add Debt'),
+          title: const Text('Add Receivable'),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
@@ -487,9 +499,6 @@ class _DebtsPageState extends State<DebtsPage> {
                         return ListView.builder(
                           itemCount: debts.length,
                           itemBuilder: (context, index) {
-                            final DateFormat formatter = DateFormat(
-                              'MMM. dd, yyyy \'at\' h:mm a',
-                            );
                             DateTime createdAt = DateTime.parse(
                               debts[index]['created_at'],
                             );
