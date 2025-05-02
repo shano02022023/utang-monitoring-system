@@ -65,9 +65,7 @@ class DebtsController {
       } else {
         return debts
             .where(
-              (debt) =>
-                  debt['status'].toString() ==
-                  filterStatus.toString()
+              (debt) => debt['status'].toString() == filterStatus.toString(),
             )
             .toList();
       }
@@ -98,14 +96,43 @@ class DebtsController {
   }
 
   static Future<int> updateStatus(String remarks, int id) async {
-    final db = await SqlHelper.db();
-    final updatedAt = DateTime.now().toString();
+    try {
+      final db = await SqlHelper.db();
+      final updatedAt = DateTime.now().toString();
 
-    return db.update(
-      'debts',
-      {'status': 'paid', 'remarks': remarks, 'updated_at': updatedAt},
-      where: 'id = ? AND status = ?',
-      whereArgs: [id, 'pending'],
-    );
+      return db.update(
+        'debts',
+        {'status': 'paid', 'remarks': remarks, 'updated_at': updatedAt},
+        where: 'id = ? AND status = ?',
+        whereArgs: [id, 'pending'],
+      );
+    } catch (e) {
+      print('Error updating status: ${e.toString()}');
+      return -1;
+    }
+  }
+
+  static Future<int> uploadProofAndUpdateStatusToPaid(
+    String proofCompletedPhoto,
+    String id,
+  ) async {
+    try {
+      final db = await SqlHelper.db();
+      final updatedAt = DateTime.now().toString();
+
+      return db.update(
+        'debts',
+        {
+          'proof_completed_photo': proofCompletedPhoto,
+          'updated_at': updatedAt,
+          'status': 'Paid',
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print('Error uploading proof: ${e.toString()}');
+      return -1;
+    }
   }
 }

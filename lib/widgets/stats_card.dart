@@ -101,7 +101,7 @@ class _StatsCardState extends State<StatsCard> {
                 ), // Dynamic vertical spacing
                 Text(
                   widget.value,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: valueFontSize, // Dynamic value font size
                     fontWeight: FontWeight.bold,
                     color: Colors.black,

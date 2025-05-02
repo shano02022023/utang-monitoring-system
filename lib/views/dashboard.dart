@@ -61,7 +61,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     return StatsCard(
                       title: 'Receivable',
                       value:
-                          _dashboardData['receivable']['ammount']!.toString(),
+                          '₱${_dashboardData['receivable']['ammount']!.toString()}',
                       icon: Icons.monetization_on,
                     );
                   }
@@ -74,10 +74,10 @@ class _DashboardPageState extends State<DashboardPage> {
                     return const Center(child: CircularProgressIndicator());
                   } else {
                     return StatsCard(
-                      title: 'Debt',
+                      title: 'Payable',
                       value:
-                          _dashboardData['debt']['ammount']!.toString(),
-                      icon: Icons.monetization_on,
+                          '₱${_dashboardData['debt']['ammount']!.toString()}',
+                      icon: Icons.money_off,
                     );
                   }
                 },

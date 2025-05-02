@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:utang_monitoring_system/controller/my_debts_controller.dart';
 import 'package:utang_monitoring_system/layouts/main_layout.dart';
+import 'package:utang_monitoring_system/views/my_debts/capture_proof_photo.dart';
 import 'package:utang_monitoring_system/widgets/input_widget.dart';
 import 'package:intl/intl.dart';
 
@@ -26,7 +31,7 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
     setState(() {
       isLoading = true;
     });
-    
+
     final _data = await MyDebtsController.getMyDebts(filterStatus);
 
     setState(() {
@@ -68,33 +73,114 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
     }
   }
 
-  void _viewDebtDetails(BuildContext context, Map<String, dynamic> debt) {
+  void _viewDebtDetails(
+    BuildContext viewDetailsContext,
+    Map<String, dynamic> debt,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final photoPath = debt['proof_completed_photo'];
+
         return AlertDialog(
-          title: Text('Debt to ${debt['lastname']}, ${debt['firstname']} ${debt['middlename']}'),
-          content: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Amount: ₱${debt['amount']}'),
-              Text('Status: ${debt['status']}'),
-              Text('Remarks: ${debt['remarks']}'),
-              Text('Created At: ${debt['created_at']}'),
-              Text('Updated At: ${debt['updated_at']}'),
-            ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            '${debt['firstname']} ${debt['lastname']}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildInfoRow('Amount', '₱${debt['amount']}'),
+                  _buildInfoRow('Status', debt['status']),
+                  _buildInfoRow('Remarks', debt['remarks']),
+                  _buildInfoRow('Created At', debt['created_at']),
+                  _buildInfoRow('Updated At', debt['updated_at']),
+                  if (photoPath != null && photoPath.toString().isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Proof Photo:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(photoPath),
+                        height: 500,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Close'),
               onPressed: () {
-                Navigator.of(context).pop();
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType.confirm,
+                  title: 'Delete Payable',
+                  text: 'Are you sure you want to delete this payable?',
+                  confirmBtnText: 'Delete',
+                  cancelBtnText: 'Cancel',
+                  onConfirmBtnTap: () async {
+                    Navigator.of(context).pop();
+                    final response = await MyDebtsController.deleteDebt(
+                      debt['id'],
+                    );
+                    if (response == 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Payable deleted successfully'),
+                        ),
+                      );
+                      Navigator.of(viewDetailsContext).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to delete payable')),
+                      );
+                    }
+                    getMyDebts('');
+                  },
+                );
               },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close', style: TextStyle(color: Colors.blue)),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
     );
   }
 
@@ -234,7 +320,7 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Debt to ${debt['lastname']}, ${debt['firstname']} ${debt['middlename']}',
+                  '${debt['firstname']} ${debt['lastname']}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -294,27 +380,34 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
               ),
               onPressed: () async {
                 if (selectedStatus != null) {
-                  final response = await MyDebtsController.updateDebt(
-                    debt['id'],
-                    selectedStatus!,
-                  );
-
-                  if (response == 1) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Status updated successfully'),
-                      ),
-                    );
-                    getMyDebts('');
+                  if (selectedStatus == 'Paid') {
+                    // Add logic to update the amount if needed
+                    // For example, you can set the amount to 0 or remove the debt
+                    Get.to(() => CaptureProofPhoto(id: debt['id']));
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to update status')),
+                    final response = await MyDebtsController.updateDebt(
+                      debt['id'],
+                      selectedStatus!,
                     );
-                  }
 
-                  Navigator.of(context).pop();
+                    if ((response == 1)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Status updated successfully'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Failed to update status'),
+                        ),
+                      );
+                    }
+                    Navigator.of(context).pop();
+                  }
                   getMyDebts('');
                 }
+                getMyDebts('');
               },
             ),
           ],
@@ -332,7 +425,7 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
           child: Column(
             children: [
               Text(
-                'My Debts Page',
+                'Payables',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
@@ -415,11 +508,11 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
                               updatedAt,
                             );
                             final fullName =
-                                '${debts[index]['lastname']}, ${debts[index]['firstname']} ${debts[index]['middlename']} ';
+                                '${debts[index]['firstname']} ${debts[index]['middlename']} ${debts[index]['lastname']}';
                             return Card(
                               child: ListTile(
                                 isThreeLine: true, // Allows more vertical space
-                                title: Text('$fullName'),
+                                title: Text(fullName),
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
                                   child: Column(
@@ -447,15 +540,51 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
                                     const SizedBox(height: 4),
                                     TextButton(
                                       onPressed: () {
-                                        _showUpdateStatusDialog(debts[index]);
+                                        if (debts[index]['status'] ==
+                                            'Pending') {
+                                          _showUpdateStatusDialog(debts[index]);
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Cannot update status of this payable',
+                                              ),
+                                            ),
+                                          );
+                                        }
                                       },
                                       child: Text(
-                                        'Update Status',
+                                        debts[index]['status'] == 'Pending'
+                                            ? 'Update Status'
+                                            : debts[index]['status'],
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      style: TextButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                      ),
+                                      style:
+                                          debts[index]['status'] == 'Pending'
+                                              ? TextButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              )
+                                              : debts[index]['status'] == 'Paid'
+                                              ? TextButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              )
+                                              : TextButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
                                     ),
                                     const SizedBox(height: 4),
                                   ],
