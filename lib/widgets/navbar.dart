@@ -153,7 +153,7 @@ class _NavbarState extends State<Navbar> {
           tileColor:
               currentRoute == '/MyDebtsPage' ? Colors.blue[100] : null,
           leading: const Icon(Icons.money_off),
-          title: Text('My Debts', style: GoogleFonts.poppins()),
+          title: Text('Payable', style: GoogleFonts.poppins()),
           onTap: () {
             Get.to(() => const MyDebtsPage());
           },

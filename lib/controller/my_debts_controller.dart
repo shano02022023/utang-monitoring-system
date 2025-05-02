@@ -78,7 +78,7 @@ class MyDebtsController {
       final updatedAt = DateTime.now().toString();
 
       return await db.update(
-        'debts',
+        'my_debts',
         {'status': status, 'updated_at': updatedAt},
         where: 'id = ?',
         whereArgs: [id],
@@ -89,21 +89,50 @@ class MyDebtsController {
     }
   }
 
+  static Future<int> updateStatus(String remarks, int id) async {
+    try {
+      final db = await SqlHelper.db();
+      final updatedAt = DateTime.now().toString();
+
+      return db.update(
+        'my_debts',
+        {'status': 'paid', 'remarks': remarks, 'updated_at': updatedAt},
+        where: 'id = ? AND status = ?',
+        whereArgs: [id, 'pending'],
+      );
+    } catch (e) {
+      print('Error updating status: ${e.toString()}');
+      return -1;
+    }
+  }
+
+  static Future<int> uploadProofAndUpdateStatusToPaid(
+    String proofCompletedPhoto,
+    String id,
+  ) async {
+    try {
+      final db = await SqlHelper.db();
+      final updatedAt = DateTime.now().toString();
+
+      return db.update(
+        'my_debts',
+        {
+          'proof_completed_photo': proofCompletedPhoto,
+          'updated_at': updatedAt,
+          'status': 'Paid',
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print('Error uploading proof: ${e.toString()}');
+      return -1;
+    }
+  }
+
   static Future<int> deleteDebt(String id) async {
     final db = await SqlHelper.db();
 
     return await db.delete('my_debts', where: 'id = ?', whereArgs: [id]);
-  }
-
-  static Future<int> updateStatus(String remarks, int id) async {
-    final db = await SqlHelper.db();
-    final updatedAt = DateTime.now().toString();
-
-    return db.update(
-      'my_debts',
-      {'status': 'paid', 'remarks': remarks, 'updated_at': updatedAt},
-      where: 'id = ? AND status = ?',
-      whereArgs: [id, 'pending'],
-    );
   }
 }
