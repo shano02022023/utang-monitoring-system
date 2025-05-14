@@ -26,7 +26,7 @@ class _WelcomePageState extends State<WelcomePage> {
     final authenticated = await LocalAuth.authenticate();
     if (authenticated) {
       box.write('classOfficerActiveTile', 'dashboard');
-      Get.to(() => const DashboardPage());
+      Get.offAll(() => const DashboardPage());
       setState(() {
         isLoggingIn = false;
       });
@@ -45,12 +45,13 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/dark_zuckerburg.jpg', width: 200),
+            Image.asset('assets/images/app_icon.jpg', width: 200),
             Text(
               'Welcome',
               style: GoogleFonts.poppins(

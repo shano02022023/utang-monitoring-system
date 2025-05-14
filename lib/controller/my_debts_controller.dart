@@ -59,7 +59,7 @@ class MyDebtsController {
   ) async {
     final db = await SqlHelper.db();
 
-    return await db.query('my_debts', orderBy: 'created_at DESC').then((debts) {
+    return await db.query('my_debts', orderBy: 'updated_at DESC').then((debts) {
       if (filterStatus == '') {
         return debts;
       } else {
@@ -106,9 +106,11 @@ class MyDebtsController {
     }
   }
 
-  static Future<int> uploadProofAndUpdateStatusToPaid(
+  static Future<int> uploadProofAndUpdateStatus(
     String proofCompletedPhoto,
     String id,
+    String? status,
+    String remarks
   ) async {
     try {
       final db = await SqlHelper.db();
@@ -119,7 +121,8 @@ class MyDebtsController {
         {
           'proof_completed_photo': proofCompletedPhoto,
           'updated_at': updatedAt,
-          'status': 'Paid',
+          'status': status,
+          'remarks': remarks,
         },
         where: 'id = ?',
         whereArgs: [id],

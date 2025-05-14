@@ -21,12 +21,23 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
   final TextEditingController _middlenameController = TextEditingController();
   final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _partialAmountController =
+      TextEditingController();
   final TextEditingController _remarksController = TextEditingController();
   List<Map<String, dynamic>> debts = [];
   final _formKey = GlobalKey<FormState>();
+  final _updateStatusFormKey = GlobalKey<FormState>();
   bool isLoading = false;
   String? selectedFilterStatus;
   final DateFormat formatter = DateFormat('MMM. dd, yyyy \'at\' h:mm a');
+
+  final List<String> statuses = [
+    'All',
+    'Pending',
+    'Partially Paid',
+    'Paid',
+    'Cancelled',
+  ];
 
   Future<void> getMyDebts(filterStatus) async {
     setState(() {
@@ -88,7 +99,7 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            '${debt['firstname']} ${debt['lastname']}',
+            'Debt to: ${debt['lastname']}, ${debt['firstname']} ${debt['middlename']}',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
           content: SizedBox(
@@ -314,112 +325,157 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Update Status',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Details',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${debt['firstname']} ${debt['lastname']}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text('Amount: ₱${debt['amount']}'),
-                Text('Status: ${debt['status']}'),
-                Text('Remarks: ${debt['remarks'] ?? 'None'}'),
-                const Divider(height: 24, thickness: 1),
-                const Text(
-                  'Select New Status',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+        return StatefulBuilder(
+          builder: (
+            BuildContext context,
+            void Function(void Function()) setModalState,
+          ) {
+            return AlertDialog(
+              title: const Text(
+                'Update Status',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Details',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${debt['firstname']} ${debt['lastname']}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Amount: ₱${debt['amount']}'),
+                    Text('Status: ${debt['status']}'),
+                    Text('Remarks: ${debt['remarks'] ?? 'None'}'),
+                    const Divider(height: 24, thickness: 1),
+                    const Text(
+                      'Select New Status',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Form(
+                      key: _updateStatusFormKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            value: selectedStatus,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                            ),
+                            items:
+                                statuses.where((value) => value != 'All').map((
+                                  String value,
+                                ) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                            onChanged: (String? newValue) {
+                              setModalState(() {
+                                selectedStatus = newValue;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          if (selectedStatus == 'Partially Paid')
+                            InputWidget(
+                              hintText: 'Partial Amount',
+                              controller: _partialAmountController,
+                              isRequired: true,
+                              isText: false,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a partial amount';
+                                }
+                                final amount = int.tryParse(value);
+                                if (amount == null ||
+                                    amount <= 0 ||
+                                    amount >=
+                                        int.parse(debt['amount'].toString())) {
+                                  return 'Please enter a valid amount';
+                                }
+                                return null;
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton.icon(
+                  icon: const Icon(Icons.cancel, color: Colors.red),
+                  label: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: const Text('Update'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
                   ),
-                  items:
-                      <String>['Pending', 'Paid', 'Cancelled'].map((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedStatus = newValue;
-                    });
+                  onPressed: () async {
+                    if (_updateStatusFormKey.currentState!.validate()) {
+                      if (selectedStatus != null) {
+                        if (selectedStatus == 'Paid' ||
+                            selectedStatus == 'Partially Paid') {
+                          Get.to(
+                            () => CaptureProofPhoto(
+                              debt: debt,
+                              selectedStatus: selectedStatus,
+                              partialAmount:
+                                  _partialAmountController.text.isNotEmpty
+                                      ? int.parse(_partialAmountController.text)
+                                      : 0,
+                            ),
+                          );
+                        } else {
+                          final response = await MyDebtsController.updateDebt(
+                            debt['id'],
+                            selectedStatus!,
+                          );
+
+                          if (response == 1) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Status updated successfully'),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to update status'),
+                              ),
+                            );
+                          }
+                          Navigator.of(context).pop();
+                        }
+                        getMyDebts('');
+                      }
+                    }
                   },
                 ),
               ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton.icon(
-              icon: const Icon(Icons.cancel, color: Colors.red),
-              label: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.save),
-              label: const Text('Update'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                if (selectedStatus != null) {
-                  if (selectedStatus == 'Paid') {
-                    // Add logic to update the amount if needed
-                    // For example, you can set the amount to 0 or remove the debt
-                    Get.to(() => CaptureProofPhoto(id: debt['id']));
-                  } else {
-                    final response = await MyDebtsController.updateDebt(
-                      debt['id'],
-                      selectedStatus!,
-                    );
-
-                    if ((response == 1)) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Status updated successfully'),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Failed to update status'),
-                        ),
-                      );
-                    }
-                    Navigator.of(context).pop();
-                  }
-                  getMyDebts('');
-                }
-                getMyDebts('');
-              },
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -454,14 +510,12 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
                           ),
                         ),
                         items:
-                            <String>['All', 'Pending', 'Paid', 'Cancelled'].map(
-                              (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value == 'All' ? '' : value,
-                                  child: Text(value),
-                                );
-                              },
-                            ).toList(),
+                            statuses.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value == 'All' ? '' : value,
+                                child: Text(value),
+                              );
+                            }).toList(),
                         onChanged: (String? newValue) {
                           setState(() {
                             selectedFilterStatus = newValue;
@@ -514,11 +568,14 @@ class _MyDebtsPageState extends State<MyDebtsPage> {
                               updatedAt,
                             );
                             final fullName =
-                                '${debts[index]['firstname']} ${debts[index]['middlename']} ${debts[index]['lastname']}';
+                                '${debts[index]['lastname']}, ${debts[index]['firstname']} ${debts[index]['middlename']}';
                             return Card(
                               child: ListTile(
                                 isThreeLine: true, // Allows more vertical space
-                                title: Text(fullName),
+                                title: Text(
+                                  fullName,
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
                                   child: Column(
