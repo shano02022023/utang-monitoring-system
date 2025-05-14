@@ -10,7 +10,7 @@ class MainLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const Navbar(), // Drawer for all pages
+      bottomNavigationBar: const Navbar(), // Drawer for all pages
       appBar: AppBar(
         backgroundColor: Colors.blue,
         title: Text('UTANG MONITORING SYSTEM',

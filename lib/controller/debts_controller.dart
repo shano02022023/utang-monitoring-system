@@ -14,6 +14,7 @@ class DebtsController {
       if (firstName.isNotEmpty &&
           lastName.isNotEmpty &&
           amount != 0 &&
+          remarks.isNotEmpty &&
           (middleName.length < 2 || middleName.isNotEmpty)) {
         return await SqlHelper.db().then((db) async {
           final id = DateTime.now().toIso8601String();
@@ -59,7 +60,7 @@ class DebtsController {
   ) async {
     final db = await SqlHelper.db();
 
-    return await db.query('debts', orderBy: 'created_at DESC').then((debts) {
+    return await db.query('debts', orderBy: 'updated_at DESC').then((debts) {
       if (filterStatus == '') {
         return debts;
       } else {
@@ -112,9 +113,11 @@ class DebtsController {
     }
   }
 
-  static Future<int> uploadProofAndUpdateStatusToPaid(
+  static Future<int> uploadProofAndUpdateStatus(
     String proofCompletedPhoto,
     String id,
+    String? status,
+    String remarks,
   ) async {
     try {
       final db = await SqlHelper.db();
@@ -125,7 +128,8 @@ class DebtsController {
         {
           'proof_completed_photo': proofCompletedPhoto,
           'updated_at': updatedAt,
-          'status': 'Paid',
+          'status': status,
+          'remarks': remarks,
         },
         where: 'id = ?',
         whereArgs: [id],
