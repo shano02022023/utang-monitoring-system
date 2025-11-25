@@ -1,4 +1,4 @@
-# MBCams
+# Utang monitoring system
 
 A Flutter project for [your app description here].
 
@@ -14,3 +14,4 @@ Ensure your environment variables are set correctly:
 # Windows PowerShell
 echo $env:JAVA_HOME  # should point to JDK 17
 flutter --version    # should show Flutter 3.24.5
+
